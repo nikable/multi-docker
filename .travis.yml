@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+
+services:
+  - docker
+
+before_install:
+  - docker build -t nikable/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true nikable/react-test npm test
+
+after_success:
+  - docker build -t nikable/multi-client ./client
+  - docker build -t nikable/multi-nginx ./nginx
+  - docker build -t nikable/multi-server ./server
+  - docker build -t nikable/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push nikable/multi-client
+  - docker push nikable/multi-nginx
+  - docker push nikable/multi-server
+  - docker push nikable/multi-worker
